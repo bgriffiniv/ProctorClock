@@ -160,6 +160,7 @@ class Clock:
     self.pad = width/16 # not sure why we're basing the padding on the width but okay
     self.d_minutes = 0
     self.d_hours = 0
+    self.play = True
     flu = None
     self.flu = None
 
@@ -180,6 +181,7 @@ class Clock:
     self.root.bind("<space>", self.reset_time) # reset minutes
     self.root.bind("<KeyPress-F>", self.add_hour) # forward one hour
     self.root.bind("<KeyPress-V>", self.subtract_hour) # reverse one hour
+    self.root.bind("<KeyPress-a>", self.toggle_play_pause) # pause
     self.canvas.pack(fill=BOTH, expand=YES) # ???
 
     #if is_use_thread:
@@ -275,6 +277,12 @@ class Clock:
     if event:
       self.seek_time(event, hour_change=-1)
 
+  def toggle_play_pause(self, event):
+    if event:
+      self.play = False if self.play else True
+      print(self.play)
+      self.poll()
+
   def reset_time(self, event):
     if event:
       #self.seek_time(hour_change=-1*self.d_hours, minute_change=-1*self.d_minutes)
@@ -332,7 +340,8 @@ class Clock:
   #
   def poll(self):
     self.redraw()
-    self.root.after(200, self.poll)
+    if self.play:
+      self.root.after(200, self.poll)
 
 
 ## Main program for testing.
