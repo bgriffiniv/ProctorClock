@@ -157,7 +157,7 @@ class Clock:
     self._all = 'handles' # no idea what this does yet
     self.root = root
     width, height = width, height
-    self.pad = width/16 # not sure why we're basing the padding on the width but okay
+    self.pad = width/10 # not sure why we're basing the padding on the width but okay
     self.d_minutes = 0
     self.d_hours = 0
     self.play = True
@@ -169,7 +169,7 @@ class Clock:
 
     self.root.bind("<Escape>", lambda _: root.destroy()) # more tkinter stuff
     self.delta = timedelta(hours=delta_hours)
-    self.canvas = Canvas(root, width=width, height=height, background=self.bgcolor)
+    self.canvas = Canvas(root, width=width, height=height, background=self.bg_color)
     viewport = (self.pad, self.pad, width-self.pad, height-self.pad) # create viewport with
                                                                          # padded values
     self.my_mapper = Mapper(self.world, viewport) # create Mapper for the window that will be created
@@ -201,7 +201,7 @@ class Clock:
       height = my_canvas.winfo_height() # get new window height
 
       img_size = min(width, height)
-      self.pad = img_size/16 # AHA! padding does scale up with min(width, height)
+      self.pad = img_size/10 # AHA! padding does scale up with min(width, height)
       viewport = (self.pad, self.pad, width-self.pad, height-self.pad)
       self.my_mapper = Mapper(self.world, viewport)
 
@@ -211,8 +211,8 @@ class Clock:
       #    self.flu = ImageTk.PhotoImage(flu)
       #    my_canvas.create_image(width/2, height/2, image=self.flu)
       #  else:
-      self.canvas.create_rectangle([[0, 0], [width, height]], fill=self.bgcolor)
-      #self.canvas = Canvas(root, width=width, height=height, background=self.bgcolor)
+      self.canvas.create_rectangle([[0, 0], [width, height]], fill=self.bg_color)
+      #self.canvas = Canvas(root, width=width, height=height, background=self.bg_color)
       
       # Why are we calling create_rectangle(...) all of a sudden?
       self.redraw()             # redraw the Clock
@@ -221,15 +221,15 @@ class Clock:
   #
   def set_colors(self):
     #if self.show_image: # nope
-    #  self.bgcolor = 'antique white'
-    #  self.timecolor = 'dark orange'
-    #  self.circlecolor = 'dark green'
-    #  self.secondcolor = 'red'
+    #  self.bg_color = 'antique white'
+    #  self.time_color = 'dark orange'
+    #  self.circle_color = 'dark green'
+    #  self.second_color = 'red'
     #else:
-    self.bgcolor = '#ffffff'
-    self.timecolor = '#000000'
-    self.circlecolor = '#000000' # originally, #808080
-    self.secondcolor = '#ff0000'
+    self.bg_color = '#ffffff'
+    self.time_color = '#000000'
+    self.circle_color = '#000000' # originally, #808080
+    self.second_color = '#ff0000'
 
   ## Toggles the displaying of a background image.
   #
@@ -243,15 +243,20 @@ class Clock:
   #
   def redraw(self):
     start = pi/2              # 12h is at pi/2 ~ 90*
-    step = pi/6               # each step is pi/6 ~ 30*
-    self.paint_circle(0, 0)  # draw a circle at the centre of the Clock
+    h_step = pi/6             # each hour step is pi/6 ~ 30*
+    m_step = pi/30            # each minute step is pi/30 ~ 6*
+    self.paint_circle(0, 0)   # draw a circle at the centre of the Clock
     for i in range(12):       # draw the minute ticks as circles
-      angle = start-i*step
+      angle = start-i*h_step
       x_coord, y_coord = cos(angle), sin(angle)
-      #self.paint_circle(x_coord, y_coord) # draw number(i) at(x, y)
+      self.paint_line(x_coord*1.13, y_coord*1.13, x_coord*1.2, y_coord*1.2, width=4)
       k = 12 if i==0 else i
       self.paint_number(x_coord, y_coord, str(k))
-      self.paint_hms()           # draw the handles
+    for j in range(60):
+       angle = start-j*m_step
+       x_coord, y_coord = cos(angle), sin(angle)
+       self.paint_line(x_coord*1.13, y_coord*1.13, x_coord*1.18, y_coord*1.18, width=3)     
+    self.paint_hms()           # draw the handles
       #if not self.show_image:
 
   ## Set Clock forward or back by a given number of minutes
@@ -301,34 +306,45 @@ class Clock:
     minute = (minute + self.d_minutes) % 60
     hour = (hour + self.d_hours) % 12
     self.root.title('%02i:%02i:%02i' %(hour, minute, second))
+    
+    hl = 0.70 # hour length
     angle = pi/2 - pi/6 *(hour + minute/60.0)
-    x_coord, y_coord = cos(angle)*0.60, sin(angle)*0.60
-    scl = self.canvas.create_line
+    x_coord, y_coord = cos(angle)*hl, sin(angle)*hl
     # draw the hour handle
-    scl(self.my_mapper.window_to_viewport(0, 0, x_coord, y_coord), fill=self.timecolor, tag=self._all,
-      width=self.pad/3)
+    self.paint_handle(x_coord, y_coord, self.time_color, self.pad/3)
 
+    ml = 0.98 # minute length
     angle = pi/2 - pi/30 *(minute + second/60.0)
-    x_coord, y_coord = cos(angle)*0.90, sin(angle)*0.90
+    x_coord, y_coord = cos(angle)*ml, sin(angle)*ml
     # draw the minute handle
-    scl(self.my_mapper.window_to_viewport(0, 0, x_coord, y_coord), fill=self.timecolor, tag=self._all,
-      width=self.pad/5)
+    self.paint_handle(x_coord, y_coord, self.time_color, self.pad/4)
 
+    sl = 0.99 # second length
     angle = pi/2 - pi/30 * second
-    x_coord, y_coord = cos(angle)*0.95, sin(angle)*0.95
+    x_coord, y_coord = cos(angle)*sl, sin(angle)*sl
     # draw the second handle
-    scl(self.my_mapper.window_to_viewport(0, 0, x_coord, y_coord), fill=self.secondcolor, tag=self._all,
-      width=self.pad/15)
+    self.paint_handle(x_coord, y_coord, self.second_color, self.pad/15)
+
+  def paint_handle(self, x, y, fill, width):
+    self.paint_line(x, y, fill=fill,
+      width=width, tag=self._all)
+
+  def paint_line(self, x1, y1, x2=0, y2=0, fill='#000000', width=3, tag=''):
+    scl = self.canvas.create_line
+    xy1, xy2 = self.my_mapper.window_to_viewport(x1, y1, x2, y2)
+    scl(xy1, xy2, fill=fill, tag=tag,
+      width=width)
+
 
   ## Draws a circle at a given point.
   #
   #  @param x, y given point.
   #
   def paint_circle(self, x_coord, y_coord):
-    circle_size = self.circlesize / 2.0
+    circle_size = self.circlesize/3
     sco = self.canvas.create_oval
-    sco(self.my_mapper.window_to_viewport(-circle_size+x_coord, -circle_size+y_coord, circle_size+x_coord, circle_size+y_coord),
-      fill=self.circlecolor, tag=self._all)
+    xy1, xy2 = self.my_mapper.window_to_viewport(-circle_size+x_coord, -circle_size+y_coord, circle_size+x_coord, circle_size+y_coord)
+    sco(xy1, xy2,fill=self.time_color)
 
   def paint_number(self, x_coord, y_coord, i):
     circle_size = self.circlesize / 2.0
