@@ -181,7 +181,7 @@ class Clock:
     self.root.bind("<space>", self.reset_time) # reset minutes
     self.root.bind("<KeyPress-F>", self.add_hour) # forward one hour
     self.root.bind("<KeyPress-V>", self.subtract_hour) # reverse one hour
-    self.root.bind("<KeyPress-a>", self.toggle_play_pause) # pause
+    self.root.bind("<KeyPress-p>", self.toggle_play_pause) # pause
     self.canvas.pack(fill=BOTH, expand=YES) # ???
 
     #if is_use_thread:
